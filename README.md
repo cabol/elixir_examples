@@ -16,3 +16,6 @@ features, consider using a project based on your specific needs.
 
 - [DistributedDynamicSupervisor](./distributed_dynamic_supervisor) -
   A supervisor that manages child processes across multiple nodes.
+- [OpenTelemetry Demo](./otel_demo) -
+  A comprehensive Phoenix application demonstrating OpenTelemetry tracing
+  patterns, best practices, and utility helpers for Elixir/Phoenix applications.
