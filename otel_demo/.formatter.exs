@@ -4,10 +4,10 @@ locals_without_parens = [
   with_span: 2,
   with_span: 3,
   with_span: 4,
-  simple_span: 1,
-  simple_span: 2,
-  simple_span: 3,
-  simple_span: 4
+  return_span_attrs: 2,
+
+  # Decorators
+  return_with_span_attrs: 2
 ]
 
 [

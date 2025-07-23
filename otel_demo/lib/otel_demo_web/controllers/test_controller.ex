@@ -31,11 +31,13 @@ defmodule OtelDemoWeb.TestController do
           }
 
           # Return {result, stop_attributes}
-          {response_data,
-           %{
-             "response.size" => byte_size(Jason.encode!(response_data)),
-             "http.status_code" => 200
-           }}
+          return_span_attrs(
+            response_data,
+            %{
+              "response.size" => byte_size(Jason.encode!(response_data)),
+              "http.status_code" => 200
+            }
+          )
         end
       )
 
@@ -62,11 +64,13 @@ defmodule OtelDemoWeb.TestController do
             duration_ms: 2500
           }
 
-          {response_data,
-           %{
-             "operation.completed" => true,
-             "http.status_code" => 200
-           }}
+          return_span_attrs(
+            response_data,
+            %{
+              "operation.completed" => true,
+              "http.status_code" => 200
+            }
+          )
         end
       )
 
@@ -100,7 +104,7 @@ defmodule OtelDemoWeb.TestController do
   end
 
   def success(conn, _params) do
-    # Example using the simple_span helper for cases where you don't need stop attributes
+    # Example using the with_span helper for cases where you don't need stop attributes
     result =
       with_span(
         "test_controller.success",
@@ -112,11 +116,13 @@ defmodule OtelDemoWeb.TestController do
           # Small delay to see duration
           Process.sleep(10)
 
-          {:ok,
-           %{
-             message: "Success!",
-             timestamp: DateTime.utc_now()
-           }}
+          return_span_attrs(
+            %{ok: :ok},
+            %{
+              message: "Success!",
+              timestamp: DateTime.utc_now()
+            }
+          )
         end
       )
 
@@ -137,11 +143,13 @@ defmodule OtelDemoWeb.TestController do
           simulate_async_call()
           simulate_database_call()
 
-          {:ok,
-           %{
-             message: "Async operation completed",
-             timestamp: DateTime.utc_now()
-           }}
+          return_span_attrs(
+            :ok,
+            %{
+              message: "Async operation completed",
+              timestamp: DateTime.utc_now()
+            }
+          )
         end
       )
 
@@ -188,13 +196,13 @@ defmodule OtelDemoWeb.TestController do
         end)
         |> Task.await()
 
-        {:ok, %{}}
+        :ok
       end
     )
   end
 
   defp simulate_external_api_call do
-    simple_span(
+    with_span(
       "http.client.request",
       %{
         "http.method" => "GET",
@@ -211,7 +219,7 @@ defmodule OtelDemoWeb.TestController do
   end
 
   defp simulate_slow_database_query do
-    simple_span(
+    with_span(
       "database.slow_query",
       %{
         "db.operation" => "SELECT",
@@ -228,7 +236,7 @@ defmodule OtelDemoWeb.TestController do
   end
 
   defp simulate_slow_external_service do
-    simple_span(
+    with_span(
       "external.slow_service",
       %{
         "service.name" => "slow-api",

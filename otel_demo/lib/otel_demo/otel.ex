@@ -12,7 +12,7 @@ defmodule OtelDemo.OTel do
   ## Types
 
   @typedoc "Span function type"
-  @type span_fun() :: (-> {term(), map()})
+  @type span_fun() :: (-> {:with_span_attributes, {result :: term(), stop_attrs :: map()}} | any())
 
   @typedoc "Proxy type for the span name"
   @type span_name() :: :opentelemetry.span_name()
@@ -26,9 +26,11 @@ defmodule OtelDemo.OTel do
   This is a wrapper function for `OpenTelemetry.Tracer.with_span/3`
   but it adds some extra features.
 
-  The `span_fun` must return a `{result, stop_attributes}` tuple. The first
-  element is the actual value to return and the second one is the map with
-  the attributes to add to the current span.
+  By default, no stop attributes are added to the span when the `span_fun`
+  returns a value. If you want to add stop attributes, you can return a
+  `{:with_span_attributes, {result, stop_attributes}}` tuple. However,
+  you can use the `return_span_attrs/2` function to return a tuple with the
+  result and the stop attributes (recommended).
 
   ## Options
 
@@ -39,13 +41,13 @@ defmodule OtelDemo.OTel do
 
   ## Example
 
+      iex> import OtelDemo.OTel
       iex> with_span "my-span", fn ->
-      ...>   {:ok, %{my_tag: "tag"}}
+      ...>   :ok
       ...> end
       :ok
-
       iex> with_span "my-span", %{foo: "bar"}, fn ->
-      ...>   {:ok, %{my_tag: "tag"}}
+      ...>   return_span_attrs  :ok, %{my_tag: "tag"}
       ...> end
       :ok
 
@@ -65,7 +67,14 @@ defmodule OtelDemo.OTel do
       start_time = System.monotonic_time(time_unit)
 
       try do
-        {return, stop_attrs} = span_fun.()
+        {return, stop_attrs} =
+          case span_fun.() do
+            {:with_span_attributes, {result, stop_attrs}} ->
+              {result, stop_attrs}
+
+            result ->
+              {result, %{}}
+          end
 
         stop_attrs
         |> Map.put(:duration, System.monotonic_time(time_unit) - start_time)
@@ -85,29 +94,22 @@ defmodule OtelDemo.OTel do
   end
 
   @doc """
-  Simplified version that doesn't require returning stop attributes.
-  Just returns the result directly from the function.
+  This is a helper macro to return a tuple with the result and the stop
+  attributes.
 
   ## Example
 
-      iex> OtelDemo.OTel.simple_span("database.query", %{table: "users"}, fn ->
-      ...>   # Do some work
-      ...>   {:ok, "result"}
-      ...> end)
-      {:ok, "result"}
+      iex> import OtelDemo.OTel
+      iex> with_span "my-span", %{foo: "bar"}, fn ->
+      ...>   return_span_attrs  :ok, %{my_tag: "tag"}
+      ...> end
+      :ok
 
   """
-  @spec simple_span(span_name(), span_attrs(), (-> term), keyword()) :: term()
-  def simple_span(span_name, span_attrs \\ %{}, span_fun, opts \\ []) do
-    with_span(
-      span_name,
-      span_attrs,
-      fn ->
-        result = span_fun.()
-        {result, %{}}
-      end,
-      opts
-    )
+  defmacro return_span_attrs(return, attributes) do
+    quote do
+      {:with_span_attributes, {unquote(return), unquote(attributes)}}
+    end
   end
 
   @doc """

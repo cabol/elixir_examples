@@ -61,7 +61,6 @@ lib/
 
 The core utility module providing:
 - **`with_span/4`** - Full-featured span wrapper with stop attributes
-- **`simple_span/4`** - Simplified span wrapper for basic use cases
 - **Automatic duration tracking** in configurable time units
 - **Comprehensive error handling** with exception recording
 - **Global attributes** management
@@ -218,21 +217,22 @@ Error scenarios demonstrate:
 ```elixir
 import OtelDemo.OTel
 
-def my_function(arg) do
-  with_span "my_function", %{"input" => arg}, fn ->
-    result = do_work(arg)
-    {result, %{"output_size" => byte_size(result)}}
+def database_call do
+  with_span "database.query", %{"table" => "users"}, fn ->
+    # Your database query
+    {:ok, results}
   end
 end
 ```
 
-### Simple Cases
+### Returning stop attributes
 
 ```elixir
-def simple_operation do
-  simple_span "database.query", %{"table" => "users"}, fn ->
-    # Your database query
-    {:ok, results}
+def my_function(arg) do
+  with_span "my_function", %{"input" => arg}, fn ->
+    result = do_work(arg)
+
+    return_span_attrs result, %{"output_size" => byte_size(result)}
   end
 end
 ```
