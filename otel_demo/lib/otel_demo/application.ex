@@ -18,7 +18,9 @@ defmodule OtelDemo.Application do
       # Start the Finch HTTP client for making HTTP requests
       {Finch, name: OtelDemo.Finch},
       # Start the Endpoint (http/https)
-      OtelDemoWeb.Endpoint
+      OtelDemoWeb.Endpoint,
+      {OtelDemo.ProcessMemoryMonitor, []},
+      OtelDemo.Test.Mem
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

@@ -18,6 +18,76 @@ services:
     networks:
       - otel-network
 
+  # Lightweight PostgreSQL with smaller memory footprint
+  db:
+    image: postgres:15-alpine  # Alpine version is smaller
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: otel_demo_dev
+      # Reduce memory usage
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    ports:
+      - "5432:5432"
+    # Use tmpfs for small development database (data won't persist)
+    tmpfs:
+      - /var/lib/postgresql/data:noexec,nosuid,size=512m
+    command: >
+      postgres
+      -c shared_buffers=128MB
+      -c effective_cache_size=512MB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=100
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+    networks:
+      - otel-network
+
+  # Lightweight Prometheus with minimal retention
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro  # Mount the config file
+    user: "65534:65534"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=2h'
+      - '--storage.tsdb.retention.size=100MB'
+      - '--web.enable-lifecycle'
+      - '--storage.tsdb.wal-compression'
+      - '--storage.tsdb.min-block-duration=5m'
+      - '--storage.tsdb.max-block-duration=10m'
+      - '--query.max-concurrency=1'
+      - '--web.max-connections=10'
+    # Use tmpfs for prometheus data (non-persistent) with proper permissions
+    tmpfs:
+      - /prometheus:exec,suid,size=200m,uid=65534,gid=65534
+    networks:
+      - otel-network
+
+  # Lightweight Grafana
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: "admin123"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_INSTALL_PLUGINS: ""
+      GF_DATABASE_TYPE: "sqlite3"
+      GF_DATABASE_PATH: ":memory:"
+    # Use tmpfs for grafana data (non-persistent)
+    tmpfs:
+      - /var/lib/grafana:noexec,nosuid,size=100m
+    networks:
+      - otel-network
+
 networks:
   otel-network:
     driver: bridge

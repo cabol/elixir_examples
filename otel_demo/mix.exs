@@ -56,12 +56,14 @@ defmodule OtelDemo.MixProject do
       {:finch, "~> 0.13"},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
+      {:telemetry_metrics_prometheus, "~> 1.1"},
       {:gettext, "~> 0.26"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
       {:bandit, "~> 1.5"},
       {:nimble_options, "~> 1.1"},
       {:decorator, "~> 1.4"},
+      {:recon, "~> 2.5"},
 
       # OpenTelemetry
       {:opentelemetry, "~> 1.5"},

@@ -159,6 +159,24 @@ defmodule OtelDemo.OTel do
     :ok
   end
 
+  @doc """
+  Put attributes into the process dictionary.
+  """
+  @spec put_process_attrs(map()) :: :ok
+  def put_process_attrs(attrs) when is_map(attrs) do
+    Process.put(:"$otel_attrs", attrs)
+
+    :ok
+  end
+
+  @doc """
+  Get attributes from the process dictionary.
+  """
+  @spec get_process_attrs(keyword()) :: map()
+  def get_process_attrs(dictionary) do
+    Keyword.get(dictionary, :"$otel_attrs", %{})
+  end
+
   ## Private functions
 
   # Avoid dialyzer warnings

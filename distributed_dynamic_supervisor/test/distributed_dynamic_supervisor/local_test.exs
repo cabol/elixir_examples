@@ -6,6 +6,8 @@ defmodule DistributedDynamicSupervisor.LocalTest do
   alias DistributedDynamicSupervisor, as: DDS
 
   setup do
+    Process.flag(:trap_exit, true)
+
     {:ok, pid1} = DDS.start_link()
     {:ok, pid2} = DDS.start_link(name: :named_global_sup)
 
