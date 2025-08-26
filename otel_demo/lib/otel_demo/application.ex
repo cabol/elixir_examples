@@ -20,6 +20,7 @@ defmodule OtelDemo.Application do
       # Start the Endpoint (http/https)
       OtelDemoWeb.Endpoint,
       {OtelDemo.ProcessMemoryMonitor, []},
+      {OtelDemo.BinLeakMonitor, []},
       OtelDemo.Test.Mem
     ]
 
