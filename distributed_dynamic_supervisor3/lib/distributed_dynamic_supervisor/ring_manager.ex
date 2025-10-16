@@ -15,6 +15,9 @@ defmodule DistributedDynamicSupervisor.RingManager do
   # Phoenix PubSub
   @pubsub DistributedDynamicSupervisor.PubSub
 
+  # Join timeout
+  @join_timeout :timer.seconds(30)
+
   ## API
 
   @doc """
@@ -70,7 +73,7 @@ defmodule DistributedDynamicSupervisor.RingManager do
     # Subscribe to the PubSub topic
     :ok = PubSub.subscribe(@pubsub, "dds:#{name}")
 
-    {:ok, %__MODULE__{name: name, ring: ring, pg_ref: pg_ref}}
+    {:ok, %__MODULE__{name: name, ring: ring, pg_ref: pg_ref}, @join_timeout}
   end
 
   @impl true
@@ -107,6 +110,14 @@ defmodule DistributedDynamicSupervisor.RingManager do
     _ignore = rem_ring_nodes(name, ring, pids)
 
     {:noreply, state}
+  end
+
+  # Join timeout
+  def handle_info(:timeout, %__MODULE__{ring: ring} = state) do
+    # Join the PG group
+    :ok = PG.join(ring)
+
+    {:noreply, state, @join_timeout}
   end
 
   # Ignore
