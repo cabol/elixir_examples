@@ -68,7 +68,7 @@ defmodule DistributedDynamicSupervisor.RingManager do
     :ok = PG.join(ring)
 
     # Set up the ring
-    _ignore = add_ring_nodes(name, ring, [node()])
+    _ignore = add_ring_nodes(ring, [node()])
 
     # Subscribe to the PubSub topic
     :ok = PubSub.subscribe(@pubsub, "dds:#{name}")
@@ -95,9 +95,9 @@ defmodule DistributedDynamicSupervisor.RingManager do
   # PG join event
   def handle_info(
         {pg_ref, :join, ring, pids},
-        %__MODULE__{pg_ref: pg_ref, name: name, ring: ring} = state
+        %__MODULE__{pg_ref: pg_ref, ring: ring} = state
       ) do
-    _ignore = add_ring_nodes(name, ring, pids)
+    _ignore = add_ring_nodes(ring, pids)
 
     {:noreply, state}
   end
@@ -105,9 +105,9 @@ defmodule DistributedDynamicSupervisor.RingManager do
   # PG leave event
   def handle_info(
         {pg_ref, :leave, ring, pids},
-        %__MODULE__{pg_ref: pg_ref, name: name, ring: ring} = state
+        %__MODULE__{pg_ref: pg_ref, ring: ring} = state
       ) do
-    _ignore = rem_ring_nodes(name, ring, pids)
+    _ignore = rem_ring_nodes(ring, pids)
 
     {:noreply, state}
   end
@@ -138,8 +138,8 @@ defmodule DistributedDynamicSupervisor.RingManager do
 
   defp name(name), do: Module.concat([name, RingManager])
 
-  defp add_ring_nodes(name, ring, pids) do
-    name
+  defp add_ring_nodes(ring, pids) do
+    ring
     |> PG.nodes()
     |> MapSet.new()
     |> MapSet.difference(ring |> ring_nodes() |> MapSet.new())
@@ -148,11 +148,11 @@ defmodule DistributedDynamicSupervisor.RingManager do
     |> for_ring_node(&Ring.add_node(ring, &1))
   end
 
-  defp rem_ring_nodes(name, ring, pids) do
+  defp rem_ring_nodes(ring, pids) do
     ring
     |> ring_nodes()
     |> MapSet.new()
-    |> MapSet.difference(name |> PG.nodes() |> MapSet.new())
+    |> MapSet.difference(ring |> PG.nodes() |> MapSet.new())
     |> MapSet.union(pids |> node_names() |> MapSet.new())
     |> MapSet.to_list()
     |> for_ring_node(&Ring.remove_node(ring, &1))
